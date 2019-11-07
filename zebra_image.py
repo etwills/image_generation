@@ -11,7 +11,7 @@ import random as rand
 """
 Function to generate the cascading images
 """
-def make_cascade(name, red, green, blue, density=255, width=1000, height=1000):
+def make_zebra_red(name, red, green, blue, density=255, width=1000, height=1000):
 
     width
     height
@@ -42,4 +42,38 @@ def make_cascade(name, red, green, blue, density=255, width=1000, height=1000):
     img.putdata(colours)
     img.save(name)
 
-make_cascade('image.png', 100, 31, 89, 255)
+make_zebra_red('trial.png', 100, 0, 100, 255)
+
+
+def make_zebra_blue(name, red, green, blue, density=255, width=1000, height=1000):
+
+    width
+    height
+    colours = [None] * (width*height)
+
+    # First let's set the top row of pixels
+    for i in range(width):
+        colours[i] = (0, 0, i % density)
+
+    # Now let's set the future row's of pixels    
+    for i in range(width*(height - 1)):
+        # we want to base colour choices on what the pixels above are
+        # create a series of colour choices
+        # make an array for the options of next pixel
+        start = max(0, i - 3)
+        end = i + 3
+        choices = [0] * (end - start)
+        for k in range(end - start):
+            choices[k] = colours[start + k]
+
+        choice = rand.randint(0, end - start - 1)
+        shift = (i + width) / (width*height)
+        colour = choices[choice][2]      
+        colours[width + i] = (math.floor(shift*red), math.floor(shift * green), colour)
+        #my_list[i] = (math.floor(255/i), math.floor(), i%2)
+
+    img = Image.new('RGB', (width, height))
+    img.putdata(colours)
+    img.save(name)
+
+make_zebra_blue('trial.png', 200, 0, 100, 255)
