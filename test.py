@@ -1,2 +1,2 @@
 import math
-print(round(math.sin(math.pi/2)))
+print(tuple(map(sum, zip((1,2,3), (1,2,3)))))

@@ -2,10 +2,10 @@ from PIL import Image
 import math as math
 import random as rand
 
-def spiral_image(name, red, green, blue, density=255, width=1000, height=1000):
+def spiral_image(name, red, green, blue, density=10, tightness=50, width=1000, height=1000):
     
     # Make the array of colours
-    matrix = create_grid(width, height, red, green, blue)
+    matrix = create_grid(width, height, density, tightness, red, green, blue)
     colours = grid_to_colours(matrix)
 
     # create the image
@@ -14,11 +14,16 @@ def spiral_image(name, red, green, blue, density=255, width=1000, height=1000):
     img.save(name)
     
 
-def create_grid(width, height, red_max, green_max, blue_max):
+def create_grid(width, height, density, tightness, red_max, green_max, blue_max):
     
     num_its = 2 * width * height
-    d = 50  # density
-    s = 10
+    d = density  # density controls how short the steps between values are
+    s = tightness # tightness controls how short fast the spiral unwinds
+
+    base_one = (255, 140, 0)
+    base_two = (0, 0, 128)
+    base_three = (220, 20, 60)
+
 
     # make the pixel grid
     grid = [0] * height
@@ -31,27 +36,34 @@ def create_grid(width, height, red_max, green_max, blue_max):
 
     for t in range(num_its):
         # make the red spiral
+        xbase = round(t/d * math.cos(t/s))
+        ybase = round(t/d * math.sin(t/s))
+
         xr = round(t/d * math.cos(t/s)) + xmid
         yr = round(t/d * math.sin(t/s)) + ymid
 
         # make the blue spiral
-        xb = round(math.cos(2*math.pi/3) * t/d * math.cos(t/s)) + xmid
-        yb = round(math.sin(2*math.pi/3) * t/d * math.sin(t/s)) + ymid
+        ang = 2 * math.pi/3
+        xb = round(math.cos(ang) * xbase  - math.sin(ang) * ybase) + xmid
+        yb = round(math.sin(ang) * xbase + math.cos(ang) * ybase) + ymid
 
-        xg = round(-math.cos(2*math.pi/3) * t/d * math.cos(t/s)) + xmid
-        yg = round(-math.sin(2*math.pi/3) * t/d * math.sin(t/s)) + ymid
+        # make the green spiral
+        xg = round(math.cos(-1*ang) * xbase  - math.sin(-1*ang) * ybase) + xmid
+        yg = round(math.sin(-1*ang) * xbase + math.cos(-1*ang) * ybase) + ymid
+        
+        # put the colours in
         try:
-            grid[xr][yr] = (red_max, 0, 0)
-            grid[xb][yb] = (0, 0, blue_max)
-            grid[xg][yg] = (0, green_max, 0)
+            grid[xr][yr] = base_one
+            grid[xb][yb] = base_two
+            grid[xg][yg] = base_three
         except IndexError:
             continue
     
     # probailistically fill the other pixels
-    grid = zebra_fill(grid, red_max, green_max, blue_max)
+    grid = melt_fill(grid, base_one, base_two, base_three)
     return grid
 
-def melt_fill(matrix, red_max, green_max, blue_max):
+def melt_fill(matrix, base_one, base_two, base_three):
     grid = matrix.copy()
     width = len(matrix)
     height = len(matrix[0])
@@ -70,15 +82,16 @@ def melt_fill(matrix, red_max, green_max, blue_max):
                     except IndexError:
                         continue
                 if len(choices) != 0:
-                    choice = accumulate_colour(choices)
+                    grid[i][j] = accumulate_colour(choices)
                 else:
                     rnum = rand.randint(0,2)
                     if rnum == 0:
-                        choice = (1, 1, blue_max)
+                        grid[i][j] = base_one
                     elif rnum == 1:
-                        choice = (red_max, 1, 1)
+                        grid[i][j] = base_two
                     else:
-                        choice = (1, green_max, 1)
+                        grid[i][j] = base_three
+    return grid
 
 def zebra_fill(matrix, red_max, green_max, blue_max):
     grid = matrix.copy()
@@ -104,9 +117,9 @@ def zebra_fill(matrix, red_max, green_max, blue_max):
                 else:
                     rnum = rand.randint(0,1)
                     if rnum == 0:
-                        choice = (1, 100, blue_max)
+                        grid[i][j] = (1, 100, blue_max)
                     else:
-                        choice = (red_max, 100, 1)
+                        grid[i][j] = (red_max, 100, 1)
     return grid
 
 def grid_to_colours(matrix):
@@ -124,7 +137,17 @@ def grid_to_colours(matrix):
 
 def accumulate_colour(colour_list):
     colour = (0, 0, 0)
-    colour = 
+    n = len(colour_list)
+    # add all the colours together
+    for col in colour_list:
+        colour = tuple(map(sum, zip(colour, col)))
+
+    # get an average colour
+    #colour = (max(round(colour[0]/n),250), max(round(colour[1]/n), 250), max(round(colour[2]/n), 250))
+    colour = (round(colour[0]/n), round(colour[1]/n), round(colour[2]/n))
+
+    return colour
+
 
 if __name__ == "__main__":
-    spiral_image("spiral_image.png", 250, 250, 250)
+    spiral_image("spiral_image.png", 0, 250, 250, 1, 100)
